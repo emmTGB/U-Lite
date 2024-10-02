@@ -1,3 +1,7 @@
+import torch
+import torch.nn as nn
+
+
 class SEBlock(nn.Module):
     def __init__(self, in_c, r=16):
         super(SEBlock, self).__init__()

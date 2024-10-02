@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from models.SEBlock import SEBlock
+
 
 class AxialDW(nn.Module):
     def __init__(self, dim, mixer_kernel, dilation=1):
@@ -24,11 +26,12 @@ class EncoderBlock(nn.Module):
         self.pw = nn.Conv2d(in_c, out_c, kernel_size=1)
         self.down = nn.MaxPool2d((2, 2))
         self.act = nn.GELU()
-        self.se = SEBlock
+        self.se = SEBlock(out_c)  # 添加 SEBlock
 
     def forward(self, x):
         skip = self.bn(self.dw(x))
         x = self.act(self.down(self.pw(skip)))
+        x = self.se(x)  # 应用 SEBlock
         return x, skip
 
 
@@ -43,11 +46,13 @@ class DecoderBlock(nn.Module):
         self.dw = AxialDW(out_c, mixer_kernel=(7, 7))
         self.act = nn.GELU()
         self.pw2 = nn.Conv2d(out_c, out_c, kernel_size=1)
+        self.se = SEBlock(out_c)  # 添加 SEBlock
 
     def forward(self, x, skip):
         x = self.up(x)
         x = torch.cat([x, skip], dim=1)
         x = self.act(self.pw2(self.dw(self.bn(self.pw(x)))))
+        x = self.se(x)  # 应用 SEBlock
         return x
 
 
