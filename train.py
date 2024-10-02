@@ -44,7 +44,7 @@ class Segmentor(pl.LightningModule):
         return metrics
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=2e-3)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max",
                                                                factor=0.5, patience=10, verbose=True)
         lr_schedulers = {"scheduler": scheduler, "monitor": "val_dice"}

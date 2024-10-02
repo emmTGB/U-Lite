@@ -62,8 +62,8 @@ class BottleNeckBlock(nn.Module):
     def __init__(self, dim):
         super().__init__()
 
-        gc = dim // 2
-        # gc = dim // 4
+        # gc = dim // 2
+        gc = dim // 4
         self.pw1 = nn.Conv2d(dim, gc, kernel_size=1)
         self.dw1 = AxialDW(gc, mixer_kernel=(3, 3), dilation=1)
         self.dw2 = AxialDW(gc, mixer_kernel=(3, 3), dilation=2)
