@@ -24,6 +24,7 @@ class EncoderBlock(nn.Module):
         self.pw = nn.Conv2d(in_c, out_c, kernel_size=1)
         self.down = nn.MaxPool2d((2, 2))
         self.act = nn.GELU()
+        self.se = SEBlock
 
     def forward(self, x):
         skip = self.bn(self.dw(x))
