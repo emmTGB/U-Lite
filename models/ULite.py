@@ -1,25 +1,28 @@
 import torch
 import torch.nn as nn
 
+
 class AxialDW(nn.Module):
-    def __init__(self, dim, mixer_kernel, dilation = 1):
+    def __init__(self, dim, mixer_kernel, dilation=1):
         super().__init__()
         h, w = mixer_kernel
-        self.dw_h = nn.Conv2d(dim, dim, kernel_size=(h, 1), padding='same', groups = dim, dilation = dilation)
-        self.dw_w = nn.Conv2d(dim, dim, kernel_size=(1, w), padding='same', groups = dim, dilation = dilation)
+        self.dw_h = nn.Conv2d(dim, dim, kernel_size=(h, 1), padding='same', groups=dim, dilation=dilation)
+        self.dw_w = nn.Conv2d(dim, dim, kernel_size=(1, w), padding='same', groups=dim, dilation=dilation)
 
     def forward(self, x):
         x = x + self.dw_h(x) + self.dw_w(x)
         return x
 
+
 class EncoderBlock(nn.Module):
     """Encoding then downsampling"""
-    def __init__(self, in_c, out_c, mixer_kernel = (7, 7)):
+
+    def __init__(self, in_c, out_c, mixer_kernel=(7, 7)):
         super().__init__()
-        self.dw = AxialDW(in_c, mixer_kernel = (7, 7))
+        self.dw = AxialDW(in_c, mixer_kernel=(7, 7))
         self.bn = nn.BatchNorm2d(in_c)
         self.pw = nn.Conv2d(in_c, out_c, kernel_size=1)
-        self.down = nn.MaxPool2d((2,2))
+        self.down = nn.MaxPool2d((2, 2))
         self.act = nn.GELU()
 
     def forward(self, x):
@@ -27,14 +30,16 @@ class EncoderBlock(nn.Module):
         x = self.act(self.down(self.pw(skip)))
         return x, skip
 
+
 class DecoderBlock(nn.Module):
     """Upsampling then decoding"""
-    def __init__(self, in_c, out_c, mixer_kernel = (7, 7)):
+
+    def __init__(self, in_c, out_c, mixer_kernel=(7, 7)):
         super().__init__()
         self.up = nn.Upsample(scale_factor=2)
-        self.pw = nn.Conv2d(in_c + out_c, out_c,kernel_size=1)
+        self.pw = nn.Conv2d(in_c + out_c, out_c, kernel_size=1)
         self.bn = nn.BatchNorm2d(out_c)
-        self.dw = AxialDW(out_c, mixer_kernel = (7, 7))
+        self.dw = AxialDW(out_c, mixer_kernel=(7, 7))
         self.act = nn.GELU()
         self.pw2 = nn.Conv2d(out_c, out_c, kernel_size=1)
 
@@ -43,20 +48,23 @@ class DecoderBlock(nn.Module):
         x = torch.cat([x, skip], dim=1)
         x = self.act(self.pw2(self.dw(self.bn(self.pw(x)))))
         return x
-    
+
+
 class BottleNeckBlock(nn.Module):
     """Axial dilated DW convolution"""
+
     def __init__(self, dim):
         super().__init__()
 
-        gc = dim//4
+        gc = dim // 2
+        # gc = dim // 4
         self.pw1 = nn.Conv2d(dim, gc, kernel_size=1)
-        self.dw1 = AxialDW(gc, mixer_kernel = (3, 3), dilation = 1)
-        self.dw2 = AxialDW(gc, mixer_kernel = (3, 3), dilation = 2)
-        self.dw3 = AxialDW(gc, mixer_kernel = (3, 3), dilation = 3)
+        self.dw1 = AxialDW(gc, mixer_kernel=(3, 3), dilation=1)
+        self.dw2 = AxialDW(gc, mixer_kernel=(3, 3), dilation=2)
+        self.dw3 = AxialDW(gc, mixer_kernel=(3, 3), dilation=3)
 
-        self.bn = nn.BatchNorm2d(4*gc)
-        self.pw2 = nn.Conv2d(4*gc, dim, kernel_size=1)
+        self.bn = nn.BatchNorm2d(4 * gc)
+        self.pw2 = nn.Conv2d(4 * gc, dim, kernel_size=1)
         self.act = nn.GELU()
 
     def forward(self, x):
@@ -64,6 +72,7 @@ class BottleNeckBlock(nn.Module):
         x = torch.cat([x, self.dw1(x), self.dw2(x), self.dw3(x)], 1)
         x = self.act(self.pw2(self.bn(x)))
         return x
+
 
 class ULite(nn.Module):
     def __init__(self):
@@ -86,7 +95,7 @@ class ULite(nn.Module):
         self.d3 = DecoderBlock(128, 64)
         self.d2 = DecoderBlock(64, 32)
         self.d1 = DecoderBlock(32, 16)
-        self.conv_out = nn.Conv2d(16, 1, kernel_size=1)
+        self.conv_out = nn.Conv2d(16, 4, kernel_size=1)
 
     def forward(self, x):
         """Encoder"""
@@ -98,7 +107,7 @@ class ULite(nn.Module):
         x, skip5 = self.e5(x)
 
         """BottleNeck"""
-        x = self.b5(x)         # (512, 8, 8)
+        x = self.b5(x)  # (512, 8, 8)
 
         """Decoder"""
         x = self.d5(x, skip5)
