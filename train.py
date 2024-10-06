@@ -4,7 +4,7 @@ import pytorch_lightning as pl
 import torch
 
 from dataset import myData
-from metrics import iou_score, DiceLoss, dice_score_multiclass, iou_score_m, dice_score
+from metrics import DiceLoss, iou_score_m, dice_score
 from models.ULite import ULite
 
 
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     progress_bar = pl.callbacks.TQDMProgressBar()
     PARAMS = {"benchmark": True, "enable_progress_bar": True, "logger": True,
               "callbacks": [check_point, progress_bar],
-              "log_every_n_steps": 1, "num_sanity_val_steps": 0, "max_epochs": 5,
+              "log_every_n_steps": 1, "num_sanity_val_steps": 0, "max_epochs": 200,
               "precision": '16-mixed',
               }
     trainer = pl.Trainer(**PARAMS)

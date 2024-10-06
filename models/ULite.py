@@ -57,25 +57,23 @@ class DecoderBlock(nn.Module):
 
 
 class BottleNeckBlock(nn.Module):
-    """Axial dilated DW convolution"""
+    """Axial dilated DW convolution with multiple dilation rates"""
 
     def __init__(self, dim):
         super().__init__()
-
-        # gc = dim // 2
         gc = dim // 4
         self.pw1 = nn.Conv2d(dim, gc, kernel_size=1)
+        # 采用不同的膨胀率
         self.dw1 = AxialDW(gc, mixer_kernel=(3, 3), dilation=1)
         self.dw2 = AxialDW(gc, mixer_kernel=(3, 3), dilation=2)
-        self.dw3 = AxialDW(gc, mixer_kernel=(3, 3), dilation=3)
-
+        self.dw3 = AxialDW(gc, mixer_kernel=(3, 3), dilation=4)  # 调整膨胀率为5
         self.bn = nn.BatchNorm2d(4 * gc)
         self.pw2 = nn.Conv2d(4 * gc, dim, kernel_size=1)
         self.act = nn.GELU()
 
     def forward(self, x):
         x = self.pw1(x)
-        x = torch.cat([x, self.dw1(x), self.dw2(x), self.dw3(x)], 1)
+        x = torch.cat([x, self.dw1(x), self.dw2(x), self.dw3(x)], 1)  # 多尺度空洞卷积
         x = self.act(self.pw2(self.bn(x)))
         return x
 

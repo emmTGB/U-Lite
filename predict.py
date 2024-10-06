@@ -6,7 +6,7 @@ import pytorch_lightning as pl
 import torch
 
 from dataset import myData
-from metrics import iou_score, dice_score, dice_score_multiclass, iou_score_m
+from metrics import iou_score, dice_score, iou_score_m
 from models.ULite import ULite
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -27,14 +27,14 @@ class Segmentor(pl.LightningModule):
         dice = dice_score(y_pred, y_true)
         iou = iou_score(y_pred, y_true)
         iou_list, miou = iou_score_m(y_pred, y_true)
-        dice2 = dice_score_multiclass(y_pred, y_true)
+        # dice2 = dice_score_multiclass(y_pred, y_true)
         metrics = {"Test Dice": dice, "Test Iou": iou,
                    "1 iou": iou_list[0],
                    "2 iou": iou_list[1],
                    "3 iou": iou_list[2],
                    "4 iou": iou_list[3],
                    "miou": miou,
-                   "dice2": dice2,
+                   # "dice2": dice2,
                    }
         self.log_dict(metrics, prog_bar=True)
         return metrics
@@ -44,7 +44,7 @@ class Segmentor(pl.LightningModule):
 def visualize_prediction(model, dataset, nums):
     plt.figure(figsize=(6, 2 * nums), layout='compressed')
     for idx in range(nums):
-        x, y = dataset[811 + idx]
+        x, y = dataset[idx]
         y_pred = model(x.unsqueeze(dim=0)).data.squeeze()
 
         # 将预测结果转换为类别索引
@@ -136,7 +136,7 @@ def visualize_prediction(model, dataset, nums):
 
 if __name__ == '__main__':
     DATA_PATH = './data.npz'
-    CHECKPOINT_PATH = './content/weights/ckpt0.9483.ckpt'
+    CHECKPOINT_PATH = './content/weights/ckpt0.5531.ckpt'
 
     # Dataset & Data Loader
     test_dataset = myData(type='test', data_path=DATA_PATH, transform=False)

@@ -58,7 +58,7 @@ def iou_score(y_pred, y_true):
         return 0
 
 
-def dice_score_multiclass(y_pred, y_true, smooth=1e-5, class_weights=weights):
+def dice_score_m(y_pred, y_true, smooth=1e-5, class_weights=weights):
     """
     计算多分类的 Dice 系数。
     y_pred: 模型的预测输出，形状为 (batch_size, num_classes, height, width)。
